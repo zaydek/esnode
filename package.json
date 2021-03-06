@@ -1,0 +1,23 @@
+{
+	"bin": {
+		"esnode": "bin/esnode.js"
+	},
+	"dependencies": {
+		"esbuild": "^0.8.55",
+		"source-map-support": "^0.5.19"
+	},
+	"description": "Node runner for JavaScript XML (JSX) and TypeScript.",
+	"devDependencies": {
+		"@types/react": "^17.0.2",
+		"esbuild": "^0.8.55",
+		"react": "^17.0.1",
+		"typescript": "^4.2.2"
+	},
+	"files": [
+		"bin/esnode.js"
+	],
+	"license": "MIT",
+	"name": "@zaydek/esnode",
+	"repository": "https://github.com/zaydek/esnode",
+	"version": "0.0.19"
+}

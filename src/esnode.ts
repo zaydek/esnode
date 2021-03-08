@@ -1,124 +1,157 @@
 #!/usr/bin/env node
+
 import * as esbuild from "esbuild"
 import * as fsp from "fs/promises"
 import * as path from "path"
 import * as terminal from "./terminal"
 import * as utils from "./utils"
 
-import parseV8ErrorStackTrace from "./parseV8ErrorStackTrace"
+// Dependencies describes dependencies abstractly.
+type Dependencies = { [key: string]: string }
 
+// Package describes package.json (only dependencies).
 interface Package {
-	dependencies: { [key: string]: string }
-	peerDependencies: { [key: string]: string }
-	devDependencies: { [key: string]: string }
+	dependencies: Dependencies
+	peerDependencies: Dependencies
+	devDependencies: Dependencies
 }
 
-// getDependencyKeys gets dependency keys from package.json.
-async function getDependencyKeys(): Promise<string[]> {
-	const resolvedPath = path.resolve("package.json")
-	try {
-		await fsp.stat(resolvedPath)
-	} catch (error) {
-		return []
-	}
+async function external(): Promise<string[]> {
+	// NOTE: Use try-catch to suppress esbuild warning.
 	let pkg: Package
 	try {
-		pkg = require(resolvedPath)
-	} catch {}
-	const dependencies = Object.keys(pkg!.dependencies ?? {})
-	const peerDependencies = Object.keys(pkg!.peerDependencies ?? {})
-	const devDependencies = Object.keys(pkg!.devDependencies ?? {})
-	return [...new Set([dependencies, peerDependencies, devDependencies].flat())]
+		pkg = require(path.resolve("package.json"))
+	} catch {
+		return []
+	}
+
+	const deps = Object.keys(pkg!.dependencies ?? {})
+	const peerDeps = Object.keys(pkg!.peerDependencies ?? {})
+	const devDeps = Object.keys(pkg!.devDependencies ?? {})
+
+	// Return distinct dependencies:
+	return [...new Set([...deps, ...peerDeps, ...devDeps])]
 }
 
-// TODO: Add support for stdin?
-// https://esbuild.github.io/api/#stdin
-async function runCommand(...args: string[]): Promise<void> {
-	// Generate inputFile and outfile
+// cleanup cleans emitted hidden files. source-map-support does not appear to
+// support 'new Function(code)', therefore '.outfile.esbuild.js' and
+// '.outfile.esbuild.map.js' are written to disk where source-map-support
+// depends on '.outfile.esbuild.map.js'.
+async function cleanup(outfile: string): Promise<void> {
+	try {
+		fsp.unlink(outfile)
+		fsp.unlink(outfile.replace(/\.js$/, ".js.map"))
+	} catch {}
+}
+
+// TODO: Add support for stdin? See https://esbuild.github.io/api/#stdin.
+async function run(args: string[]): Promise<void> {
 	const inputFile = path.resolve(args[0]!)
-	const outfile = path.join("__cache__", path.basename(inputFile.slice(0, -path.extname(inputFile).length) + ".js"))
+	const outfile = ".outfile.esbuild.js"
 
-	// Generate external (dependency keys)
-	const external = await getDependencyKeys()
+	const external_ = await external()
 
-	// Run esbuild
 	try {
 		await esbuild.build({
-			banner: `// https://github.com/evanw/node-source-map-support\nrequire("source-map-support").install();\n`,
+			banner: `require("source-map-support").install();\n`,
 			bundle: true,
 			define: {
-				__DEV__: JSON.stringify(process.env.NODE_ENV !== "production"),
-				"process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "development"),
+				__DEV__: JSON.stringify(process.env["NODE_ENV"] !== "production"),
+				"process.env.NODE_ENV": JSON.stringify(process.env["NODE_ENV"] ?? "development"),
 			},
 			entryPoints: [inputFile],
-			external,
+			external: external_,
 			format: "cjs",
-			loader: { [".js"]: "jsx" },
+			loader: {
+				[".js"]: "jsx",
+			},
 			outfile,
 			platform: "node",
 			sourcemap: true,
 		})
-		// Defer to esbuild logging; logLevel is enabled by default
-	} catch (_) {
-		// Defer to esbuild logging; logLevel is enabled by default
+	} catch (error) {
+		// Write non-esbuild errors to stderr:
+		if (!("errors" in error) && !("warnings" in error)) console.error(error)
+
+		// Fatally exit (status code 1):
+		await cleanup(outfile)
 		process.exit(1)
 	}
 
-	// TODO: Update process.argv
-
-	// Use try-catch to suppress an esbuild warning
-	//
-	// > warning: Indirect calls to "require" will not be bundled (surround with a
-	// try/catch to silence this warning)
-	//
+	// NOTE: Use try-catch to suppress esbuild warning.
 	try {
-		// Reset process.argv; forward args
-		process.argv = [process.argv[0]!, ...args]
+		// process.argv = [process.argv[0]!, ...args]
 		require(path.resolve(outfile))
-	} catch (v8Error) {
-		const message = await parseV8ErrorStackTrace(v8Error)
-		console.log(utils.formatMessages([message]))
+	} catch (error) {
+		const message = await utils.parseV8Error(error)
+		console.error(utils.formatErrorAndMessages(error, [message]))
+
+		// Fatally exit (status code 1):
+		await cleanup(outfile)
 		process.exit(1)
 	}
+
+	await cleanup(outfile)
 }
 
-function getCLIArguments(): string[] {
-	const args = [...process.argv]
-	if (process.argv0 === "node") args.shift()
-	args.shift()
-	return args
+function accent(str: string): string {
+	return str.replace(/('[^']+')/g, terminal.cyan("$1"))
 }
 
-const usage = `
-  ${terminal.bold("Usage:")}
+function format(usage: string): string {
+	const arr = usage.split("\n")
+	return arr.map(line => "\x20" + accent(line)).join("\n")
+}
 
-    run <entry point>
+// watch  [directory]
+const usage = format(`
+${terminal.bold("esnode [file]")}
 
-      JavaScript     -> .js
-      JavaScript XML -> .js or .jsx
-      TypeScript     -> .ts
-      TypeScript XML -> .tsx
+	esnode runs a JavaScript or TypeScript file using the Node.js runtime. This is
+	almost the same as 'node [file]' except that 'esnode [file]' is compatible with
+	'.js', '.jsx', '.ts', and '.tsx' files. You may even interoperate JavaScript
+	and TypeScript.
 
-  ${terminal.bold("Repository:")}
+	Your entry point and its dependencies are transpiled on-the-fly by esbuild.
+	esbuild is configured to not bundle 'package.json' dependencies at build-time;
+	these dependencies use 'require' at runtime.
 
-    ${terminal.bold.cyan("https://github.com/zaydek/esnode")}
-`
+	Note that '.ts' and '.tsx' files are not type-checked. You may use VS Code or
+	the TypeScript CLI 'tsc' for type-checking. To add the TypeScript CLI, use
+	'npm i --save-dev typescript' or 'yarn add --dev typescript'.
 
-async function entry(): Promise<void> {
-	const args = getCLIArguments()
-	if (args.length < 2) {
+${terminal.bold("Examples")}
+
+	${terminal.cyan("%")} ./node_modules/.bin/esnode hello.ts
+	${terminal.dim("Hello, esnode!")}
+
+	${terminal.cyan("%")} alias esnode=./node_modules/.bin/esnode
+	${terminal.cyan("%")} esnode hello.ts
+	${terminal.dim("Hello, esnode!")}
+
+${terminal.bold("Repositories")}
+
+	esnode:  ${terminal.underline("https://github.com/zaydek/esnode")}
+	esbuild: ${terminal.underline("https://github.com/evanw/esbuild")}
+`)
+
+async function main(): Promise<void> {
+	// Remove node args[0] and esnode args[1]:
+	const args = [...process.argv.slice(2)]
+	if (args.length === 0) {
 		console.log(usage)
-		process.exit()
+		return
 	}
 
 	const cmd = args[0]
 	if (cmd === "version" || cmd === "--version" || cmd === "-v") {
 		console.log("TODO")
-	} else if (cmd === "run") {
-		await runCommand(...args.slice(1))
-	} else {
-		console.error(`Unsupported command ${JSON.stringify(cmd)}`)
+		return
+	} else if (cmd === "usage" || cmd === "help") {
+		console.log(usage)
+		return
 	}
+	await run(args)
 }
 
-entry()
+main()

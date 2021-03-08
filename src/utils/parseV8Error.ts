@@ -1,12 +1,13 @@
 import * as esbuild from "esbuild"
 import * as fsp from "fs/promises"
 
-// This implementation is heavily based on @evanw’s "extractErrorMessageV8"
-// implementation in esbuild.
+// This implementation is heavily based on @evanw’s extractErrorMessageV8 and
+// parseStackLinesV8 implementations in esbuild.
 //
+// https://github.com/evanw/esbuild
 // https://github.com/evanw/esbuild/blob/master/lib/common.ts
 
-export default async function parseV8ErrorStackTrace(error: any): Promise<esbuild.Message> {
+export async function parseV8Error(error: any): Promise<esbuild.Message> {
 	let text = "Internal error"
 	let location: esbuild.Location | null = null
 
@@ -49,7 +50,7 @@ export default async function parseV8ErrorStackTrace(error: any): Promise<esbuil
 						line: +match[2]!,
 						column: +match[3]! - 1,
 						length: 0,
-						lineText: lineText, // + "\n" + lines.slice(1).join("\n"),
+						lineText: lineText,
 					}
 				}
 				break

@@ -1,34 +1,31 @@
-// BuilderFunction describes the builder pattern where a function or a method
-// (recursively) can be called.
-//
 // For example:
 //
-// - function(...)
-// - function.method(...)
-// - function.method.method(...)
+// - build(...).method(...)
+// - build(...).method.method(...)
+// - build(...).method.method.methods(...)
 //
-export interface Builder {
+export interface BuilderChain {
 	(...args: unknown[]): string
-	normal: Builder
-	bold: Builder
-	dim: Builder
-	underline: Builder
-	black: Builder
-	red: Builder
-	green: Builder
-	yellow: Builder
-	blue: Builder
-	magenta: Builder
-	cyan: Builder
-	white: Builder
-	bgBlack: Builder
-	bgRed: Builder
-	bgGreen: Builder
-	bgYellow: Builder
-	bgBlue: Builder
-	bgMagenta: Builder
-	bgCyan: Builder
-	bgWhite: Builder
+	normal: BuilderChain
+	bold: BuilderChain
+	dim: BuilderChain
+	underline: BuilderChain
+	black: BuilderChain
+	red: BuilderChain
+	green: BuilderChain
+	yellow: BuilderChain
+	blue: BuilderChain
+	magenta: BuilderChain
+	cyan: BuilderChain
+	white: BuilderChain
+	bgBlack: BuilderChain
+	bgRed: BuilderChain
+	bgGreen: BuilderChain
+	bgYellow: BuilderChain
+	bgBlue: BuilderChain
+	bgMagenta: BuilderChain
+	bgCyan: BuilderChain
+	bgWhite: BuilderChain
 }
 
 const opts = [
@@ -54,14 +51,12 @@ const opts = [
 	{ name: "bgWhite", code: "\x1b[47m" },
 ]
 
-function build(...codes: string[]): Builder {
-	// Create a format function
+function build(...codes: string[]): BuilderChain {
 	function format(...args: unknown[]): string {
-		const str = codes.join("")
-		return str + args.join(" ").replaceAll("\x1b[0m", "\x1b[0m" + str) + "\x1b[0m"
+		if (args.length === 0) return ""
+		const code = codes.join("")
+		return code + args.join(" ").replaceAll("\x1b[0m", "\x1b[0m" + code) + "\x1b[0m"
 	}
-
-	// Define "name" as a property of "format"
 	for (const { name, code } of opts) {
 		Object.defineProperty(format, name, {
 			enumerable: true,
@@ -70,10 +65,9 @@ function build(...codes: string[]): Builder {
 			},
 		})
 	}
-	return format as Builder
+	return format as BuilderChain
 }
 
-export const noop = (...args: unknown[]): string => args.join(" ")
 export const normal = build("\x1b[0m")
 export const bold = build("\x1b[1m")
 export const dim = build("\x1b[2m")

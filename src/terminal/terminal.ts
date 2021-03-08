@@ -55,7 +55,10 @@ function build(...codes: string[]): BuilderChain {
 	function format(...args: unknown[]): string {
 		if (args.length === 0) return ""
 		const code = codes.join("")
-		return code + args.join(" ").replaceAll("\x1b[0m", "\x1b[0m" + code) + "\x1b[0m"
+
+		// NOTE: Use '.replace' not '.replaceAll'; users have reported:
+		// 'TypeError: args.join(...).replaceAll is not a function'.
+		return code + args.join(" ").replace(/\x1b\[0m/g, "\x1b[0m" + code) + "\x1b[0m"
 	}
 	for (const { name, code } of opts) {
 		Object.defineProperty(format, name, {

@@ -138,6 +138,9 @@ ${terminal.bold("Examples")}
 	${terminal.cyan("%")} esnode hello.ts
 	${terminal.dim("Hello, world!")}
 
+	${terminal.cyan("%")} STACK_TRACE=true esnode hello.ts
+	${terminal.dim("Hello, world!")}
+
 ${terminal.bold("Repositories")}
 
 	esnode:  ${terminal.underline("https://github.com/zaydek/esnode")}

@@ -3,21 +3,27 @@
 esnode is the answer to the question: How do I run JSX or TypeScript on the server without build-steps?
 
 esnode builds on [esbuild](https://github.com/evanw/esbuild) and
-[source-map-support](https://github.com/evanw/node-source-map-support) to enable transpilation on-the-fly for `.js`,
-`.jsx`, `.ts`, and `.tsx`.
+[source-map-support](https://github.com/evanw/node-source-map-support) (thanks [@evanw](https://github.com/evanw)!) to
+enable transpilation on-the-fly for `.js`, `.jsx`, `.ts`, and `.tsx` files.
+
+Note that esnode does not type-check at build-time. If this is important to you, you may want to use
+[ts-node](https://github.com/TypeStrong/ts-node) or [Deno](https://github.com/denoland/deno). Note that
+[Deno](https://github.com/denoland/deno) is not largely compatible with the existing Node.js ecosystem. Therefore if
+type-checking at build-time and interoperability with Node.js is important to you, you may want to use
+[ts-node](https://github.com/TypeStrong/ts-node) or defer to VS Code and or `tsc` for type-checking.
 
 ## Installation
 
 To install esnode, simply install `@zaydek/esnode` and run `./node_modules/.bin/esnode`.
 
-**NPM:**
+**NPM**
 
 ```sh
 npm i --save-dev @zaydek/esnode
 ./node_modules/.bin/esnode [file]
 ```
 
-**Yarn:**
+**Yarn**
 
 ```sh
 yarn --dev @zaydek/esnode

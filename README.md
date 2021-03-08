@@ -30,6 +30,22 @@ yarn --dev @zaydek/esnode
 ./node_modules/.bin/esnode [file]
 ```
 
+Finally, create and run a JSX or TypeScript file:
+
+```ts
+// hello.ts
+function hello(who?: string): string {
+	return `Hello, ${who ?? "world"}!`
+}
+
+console.log(hello())
+```
+
+```sh
+% ./node_modules/.bin/esnode hello.ts
+Hello, world!
+```
+
 For convenience, you may want to alias esnode as `alias esnode=./node_modules/.bin/esnode`. To alias esnode globally,
 add `alias esnode=./node_modules/.bin/esnode` to your `~/.bash_profile`.
 

@@ -73,4 +73,4 @@ add `alias esnode=./node_modules/.bin/esnode` to your `~/.bash_profile`.
 
 ## License
 
-MIT open source.
+Licensed as MIT open source.

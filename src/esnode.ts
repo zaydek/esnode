@@ -150,7 +150,6 @@ async function main(): Promise<void> {
 		console.log(usage)
 		return
 	}
-
 	const cmd = args[0]
 	if (cmd === "version" || cmd === "--version" || cmd === "-v") {
 		console.log("TODO")

@@ -1,6 +1,6 @@
 {
 	"bin": {
-		"esnode": "bin/esnode.js"
+		"esnode": "bin/esnode"
 	},
 	"dependencies": {
 		"esbuild": "^0.8.56",

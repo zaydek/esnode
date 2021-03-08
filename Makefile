@@ -4,5 +4,5 @@ all:
 			--bundle \
 			--external:esbuild \
 			--format=cjs \
-			--outfile=bin/esnode.js \
+			--outfile=bin/esnode \
 			--platform=node

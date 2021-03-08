@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import * as esbuild from "esbuild"
-import * as fsp from "fs/promises"
+import * as fs from "fs"
 import * as path from "path"
 import * as terminal from "./terminal"
 import * as utils from "./utils"
@@ -39,8 +39,8 @@ async function external(): Promise<string[]> {
 // depends on '.outfile.esbuild.map.js'.
 async function cleanup(outfile: string): Promise<void> {
 	try {
-		fsp.unlink(outfile)
-		fsp.unlink(outfile.replace(/\.js$/, ".js.map"))
+		await fs.promises.unlink(outfile)
+		await fs.promises.unlink(outfile.replace(/\.js$/, ".js.map"))
 	} catch {}
 }
 

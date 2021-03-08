@@ -1,5 +1,5 @@
 import * as esbuild from "esbuild"
-import * as fsp from "fs/promises"
+import * as fs from "fs"
 
 // This implementation is heavily based on @evanw’s extractErrorMessageV8 and
 // parseStackLinesV8 implementations in esbuild.
@@ -42,7 +42,7 @@ export async function parseV8Error(error: any): Promise<esbuild.Message> {
 				// Match on the file location
 				match = /^(\S+):(\d+):(\d+)$/.exec(line)
 				if (match) {
-					const contents = await fsp.readFile(match[1]!, "utf8")
+					const contents = await fs.promises.readFile(match[1]!, "utf8")
 					const lineText = contents.split(/\r\n|\r|\n|\u2028|\u2029/)[+match[2]! - 1] || ""
 					location = {
 						file: match[1]!,

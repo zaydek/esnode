@@ -5,4 +5,5 @@ all:
 			--external:esbuild \
 			--format=cjs \
 			--outfile=bin/esnode \
-			--platform=node
+			--platform=node \
+			--target=es2017

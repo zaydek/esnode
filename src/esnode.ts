@@ -100,34 +100,39 @@ function accent(str: string): string {
 
 function format(usage: string): string {
 	const arr = usage.split("\n")
-	return arr.map(line => "\x20" + accent(line)).join("\n")
+	return arr
+		.map(line => {
+			if (line === "") return ""
+			return "\x20" + accent(line.replace(/\t/g, "  ")) // Tabs -> spaces
+		})
+		.join("\n")
 }
 
-// watch  [directory]
+// TODO: Add watch mode support.
 const usage = format(`
 ${terminal.bold("esnode [file]")}
 
 	esnode runs a JavaScript or TypeScript file using the Node.js runtime. This is
 	almost the same as 'node [file]' except that 'esnode [file]' is compatible with
-	'.js', '.jsx', '.ts', and '.tsx' files. You may even interoperate JavaScript
-	and TypeScript.
+	'.js', '.jsx', '.ts', and '.tsx' files. You may even interoperate JavaScript and
+	TypeScript.
 
 	Your entry point and its dependencies are transpiled on-the-fly by esbuild.
 	esbuild is configured to not bundle 'package.json' dependencies at build-time;
 	these dependencies use 'require' at runtime.
 
-	Note that '.ts' and '.tsx' files are not type-checked. You may use VS Code or
-	the TypeScript CLI 'tsc' for type-checking. To add the TypeScript CLI, use
+	Note that '.ts' and '.tsx' files are not type-checked. You may use VS Code or the
+	TypeScript CLI 'tsc' for type-checking. To add the TypeScript CLI, use
 	'npm i --save-dev typescript' or 'yarn add --dev typescript'.
 
 ${terminal.bold("Examples")}
 
 	${terminal.cyan("%")} ./node_modules/.bin/esnode hello.ts
-	${terminal.dim("Hello, esnode!")}
+	${terminal.dim("Hello, world!")}
 
 	${terminal.cyan("%")} alias esnode=./node_modules/.bin/esnode
 	${terminal.cyan("%")} esnode hello.ts
-	${terminal.dim("Hello, esnode!")}
+	${terminal.dim("Hello, world!")}
 
 ${terminal.bold("Repositories")}
 
@@ -136,7 +141,7 @@ ${terminal.bold("Repositories")}
 `)
 
 async function main(): Promise<void> {
-	// Remove node args[0] and esnode args[1]:
+	// Remove node and esnode arguments:
 	const args = [...process.argv.slice(2)]
 	if (args.length === 0) {
 		console.log(usage)

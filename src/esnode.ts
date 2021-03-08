@@ -17,7 +17,7 @@ interface Package {
 }
 
 async function external(): Promise<string[]> {
-	// NOTE: Use try-catch to suppress esbuild warning.
+	// NOTE: Use try-catch to suppress esbuild dynamic require warning.
 	let pkg: Package
 	try {
 		pkg = require(path.resolve("package.json"))
@@ -78,9 +78,12 @@ async function run(args: string[]): Promise<void> {
 		process.exit(1)
 	}
 
-	// NOTE: Use try-catch to suppress esbuild warning.
+	// NOTE: Use try-catch to suppress esbuild dynamic require warning.
 	try {
-		// process.argv = [process.argv[0]!, ...args]
+		// // FIXME: Updating process.argv appears to break parseV8Error;
+		// // 'namespace += path.relative(process.cwd(), loc.file) + ":";'.
+		// const entry = path.join(process.cwd(), args[0]!)
+		// process.argv = [process.argv[0]!, entry, ...args.slice(1)]
 		require(path.resolve(outfile))
 	} catch (error) {
 		const message = await utils.parseV8Error(error)

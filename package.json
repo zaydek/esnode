@@ -14,8 +14,13 @@
 	"files": [
 		"bin/esnode.js"
 	],
+	"keywords": [
+		"esnode",
+		"node",
+		"esbuild"
+	],
 	"license": "MIT",
 	"name": "@zaydek/esnode",
 	"repository": "https://github.com/zaydek/esnode",
-	"version": "0.0.19"
+	"version": "0.0.20"
 }

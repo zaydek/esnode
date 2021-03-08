@@ -68,7 +68,7 @@ async function run(args: string[]): Promise<void> {
 			outfile,
 			platform: "node",
 			sourcemap: true,
-			target: "es2017",
+			target: "es2017", // Lower to ES2017
 		})
 	} catch (error) {
 		// Write non-esbuild errors to stderr:

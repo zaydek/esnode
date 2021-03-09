@@ -1,3 +1,6 @@
+// BuilderFunction describes the builder pattern where methods can be
+// recursively chained.
+//
 // For example:
 //
 // - build(...).method(...)

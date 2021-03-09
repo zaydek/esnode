@@ -33,21 +33,25 @@ async function external(): Promise<string[]> {
 	return [...new Set([...deps, ...peerDeps, ...devDeps])]
 }
 
-// cleanup cleans emitted hidden files. source-map-support does not appear to
-// support 'new Function(code)', therefore '.outfile.esbuild.js' and
-// '.outfile.esbuild.map.js' are written to disk where source-map-support
-// depends on '.outfile.esbuild.map.js'.
-async function cleanup(outfile: string): Promise<void> {
+// cleanBuildArtifacts removes:
+//
+// - .esnode.esbuild.js
+// - .esnode.esbuild.js.map
+//
+// source-map-support does not support 'new Function(code)' so build artifacts
+// are emitted as a fallback and therefore need to be cleaned.
+//
+async function cleanBuildArtifacts(): Promise<void> {
 	try {
-		await fs.promises.unlink(outfile)
-		await fs.promises.unlink(outfile.replace(/\.js$/, ".js.map"))
+		await fs.promises.unlink(".esnode.esbuild.js")
+		await fs.promises.unlink(".esnode.esbuild.js.map")
 	} catch {}
 }
 
 // TODO: Add support for stdin? See https://esbuild.github.io/api/#stdin.
 async function run(args: string[]): Promise<void> {
 	const inputFile = path.resolve(args[0]!)
-	const outfile = ".outfile.esbuild.js"
+	const outfile = ".esnode.esbuild.js"
 
 	const external_ = await external()
 
@@ -75,7 +79,7 @@ async function run(args: string[]): Promise<void> {
 		if (!("errors" in error) && !("warnings" in error)) console.error(error)
 
 		// Fatally exit (status code 1):
-		await cleanup(outfile)
+		await cleanBuildArtifacts()
 		process.exit(1)
 	}
 
@@ -91,11 +95,11 @@ async function run(args: string[]): Promise<void> {
 		console.error(utils.formatErrorAndMessages(error, [message]))
 
 		// Fatally exit (status code 1):
-		await cleanup(outfile)
+		await cleanBuildArtifacts()
 		process.exit(1)
 	}
 
-	await cleanup(outfile)
+	await cleanBuildArtifacts()
 }
 
 function accent(str: string): string {
@@ -164,5 +168,9 @@ async function main(): Promise<void> {
 	}
 	await run(args)
 }
+
+process.on("uncaughtException", async () => {
+	await cleanBuildArtifacts()
+})
 
 main()

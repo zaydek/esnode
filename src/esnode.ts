@@ -41,6 +41,7 @@ async function external(): Promise<string[]> {
 // source-map-support does not support 'new Function(code)' so build artifacts
 // are emitted as a fallback and therefore need to be cleaned.
 //
+// FIXME: If the subprocess eagerly exists, build artifacts are not removed.
 async function cleanBuildArtifacts(): Promise<void> {
 	try {
 		await fs.promises.unlink(".esnode.esbuild.js")
@@ -78,7 +79,7 @@ async function run(args: string[]): Promise<void> {
 		// Write non-esbuild errors to stderr:
 		if (!("errors" in error) && !("warnings" in error)) console.error(error)
 
-		// Fatally exit (status code 1):
+		// Fatally exit (exit code 1):
 		await cleanBuildArtifacts()
 		process.exit(1)
 	}
@@ -94,7 +95,7 @@ async function run(args: string[]): Promise<void> {
 		const message = await utils.parseV8Error(error)
 		console.error(utils.formatErrorAndMessages(error, [message]))
 
-		// Fatally exit (status code 1):
+		// Fatally exit (exit code 1):
 		await cleanBuildArtifacts()
 		process.exit(1)
 	}
@@ -152,6 +153,9 @@ ${terminal.bold("Repositories")}
 `)
 
 async function main(): Promise<void> {
+	// NOTE: See cleanBuildArtifacts FIXME.
+	await cleanBuildArtifacts()
+
 	// Remove node and esnode arguments:
 	const args = [...process.argv.slice(2)]
 	if (args.length === 0) {
@@ -168,9 +172,5 @@ async function main(): Promise<void> {
 	}
 	await run(args)
 }
-
-process.on("uncaughtException", async () => {
-	await cleanBuildArtifacts()
-})
 
 main()

@@ -26,7 +26,7 @@ npm i --save-dev @zaydek/esnode
 **Yarn**
 
 ```sh
-yarn --dev @zaydek/esnode
+yarn add --dev @zaydek/esnode
 ./node_modules/.bin/esnode [file]
 ```
 
